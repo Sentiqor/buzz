@@ -63,7 +63,26 @@ function configureDevE2eBridgeFromUrl() {
   }
 
   const e2eWindow = window as E2eWindow;
-  e2eWindow.__BUZZ_E2E__ ??= { mode: "mock" };
+  e2eWindow.__BUZZ_E2E__ ??= {
+    mode: "mock",
+    ...(url.searchParams.get("demo") === "agent-status"
+      ? {
+          mock: {
+            managedAgents: [],
+            relayAgents: ["Gateway", "Knowledge", "Docs", "Platform"].map(
+              (name, index) => ({
+                pubkey: (index + 160).toString(16).repeat(32),
+                name: `${name} Lead (demo)`,
+                ownerPubkey: E2E_DEFAULT_PUBKEY,
+                status: "offline",
+                channelNames: [],
+                channelIds: [],
+              }),
+            ),
+          },
+        }
+      : {}),
+  };
 
   const community = {
     addedAt: new Date().toISOString(),

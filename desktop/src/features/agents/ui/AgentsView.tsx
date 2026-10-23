@@ -1,3 +1,5 @@
+import { AgentStatusView } from "./AgentStatusView";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import * as React from "react";
 import { EllipsisVertical, OctagonX, Settings2 } from "lucide-react";
 import {
@@ -217,93 +219,104 @@ export function AgentsView() {
             description="Set up and manage your agents."
             title="Agents"
           />
-          <div className="flex flex-col gap-8">
-            <UnifiedAgentsSection
-              getAvailability={agents.getAvailability}
-              defaultModel={inheritedDefaults.model.value}
-              actionErrorMessage={agents.actionErrorMessage}
-              actionNoticeMessage={agents.actionNoticeMessage}
-              agents={agents.managedAgents}
-              agentsError={
-                agents.managedAgentsQuery.error instanceof Error
-                  ? agents.managedAgentsQuery.error
-                  : null
-              }
-              isActionPending={isActionPending}
-              isAgentsLoading={agents.managedAgentsQuery.isLoading}
-              startingAgentPubkey={agents.startingAgentPubkey}
-              restartingAgentPubkey={agents.restartingAgentPubkey}
-              startingPersonaIds={agents.startingPersonaIds}
-              onOpenAgentProfile={(pubkey, options) => {
-                openProfilePanel?.(pubkey, options);
-              }}
-              onOpenPersonaProfile={(persona) => {
-                openPersonaProfilePanel?.(persona);
-              }}
-              onStartAgent={(pubkey) => {
-                void agents.handleStart(pubkey);
-              }}
-              onRestartAgent={(pubkey) => {
-                void agents.handleRestart(pubkey);
-              }}
-              onStartPersona={(persona) => {
-                void agents.handleStartPersona(persona);
-              }}
-              // Persona props
-              personas={personas.libraryPersonas}
-              personasError={
-                personas.personasQuery.error instanceof Error
-                  ? personas.personasQuery.error
-                  : null
-              }
-              personaFeedbackErrorMessage={
-                personas.personaFeedbackSurface === "library"
-                  ? personas.personaErrorMessage
-                  : null
-              }
-              personaFeedbackNoticeMessage={
-                personas.personaFeedbackSurface === "library"
-                  ? personas.personaNoticeMessage
-                  : null
-              }
-              isPersonasLoading={personas.personasQuery.isLoading}
-              isPersonasPending={personas.isPending}
-              onOpenCatalog={() => openCommunityCatalog("agents")}
-              onDuplicatePersona={personas.openDuplicate}
-              onEditPersona={personas.openEdit}
-              onSharePersona={personas.openShare}
-              onDeactivatePersona={(persona) => {
-                void personas.handleSetActive(persona, false, "library");
-              }}
-              onDeletePersona={personas.openDelete}
-            />
+          <Tabs defaultValue="manage">
+            <TabsList aria-label="Agent views">
+              <TabsTrigger value="status">Status</TabsTrigger>
+              <TabsTrigger value="manage">Manage</TabsTrigger>
+            </TabsList>
+            <TabsContent value="status">
+              <AgentStatusView />
+            </TabsContent>
+            <TabsContent value="manage">
+              <div className="flex flex-col gap-8">
+                <UnifiedAgentsSection
+                  getAvailability={agents.getAvailability}
+                  defaultModel={inheritedDefaults.model.value}
+                  actionErrorMessage={agents.actionErrorMessage}
+                  actionNoticeMessage={agents.actionNoticeMessage}
+                  agents={agents.managedAgents}
+                  agentsError={
+                    agents.managedAgentsQuery.error instanceof Error
+                      ? agents.managedAgentsQuery.error
+                      : null
+                  }
+                  isActionPending={isActionPending}
+                  isAgentsLoading={agents.managedAgentsQuery.isLoading}
+                  startingAgentPubkey={agents.startingAgentPubkey}
+                  restartingAgentPubkey={agents.restartingAgentPubkey}
+                  startingPersonaIds={agents.startingPersonaIds}
+                  onOpenAgentProfile={(pubkey, options) => {
+                    openProfilePanel?.(pubkey, options);
+                  }}
+                  onOpenPersonaProfile={(persona) => {
+                    openPersonaProfilePanel?.(persona);
+                  }}
+                  onStartAgent={(pubkey) => {
+                    void agents.handleStart(pubkey);
+                  }}
+                  onRestartAgent={(pubkey) => {
+                    void agents.handleRestart(pubkey);
+                  }}
+                  onStartPersona={(persona) => {
+                    void agents.handleStartPersona(persona);
+                  }}
+                  // Persona props
+                  personas={personas.libraryPersonas}
+                  personasError={
+                    personas.personasQuery.error instanceof Error
+                      ? personas.personasQuery.error
+                      : null
+                  }
+                  personaFeedbackErrorMessage={
+                    personas.personaFeedbackSurface === "library"
+                      ? personas.personaErrorMessage
+                      : null
+                  }
+                  personaFeedbackNoticeMessage={
+                    personas.personaFeedbackSurface === "library"
+                      ? personas.personaNoticeMessage
+                      : null
+                  }
+                  isPersonasLoading={personas.personasQuery.isLoading}
+                  isPersonasPending={personas.isPending}
+                  onOpenCatalog={() => openCommunityCatalog("agents")}
+                  onDuplicatePersona={personas.openDuplicate}
+                  onEditPersona={personas.openEdit}
+                  onSharePersona={personas.openShare}
+                  onDeactivatePersona={(persona) => {
+                    void personas.handleSetActive(persona, false, "library");
+                  }}
+                  onDeletePersona={personas.openDelete}
+                />
 
-            <TeamsSection
-              error={
-                teamActions.teamsQuery.error instanceof Error
-                  ? teamActions.teamsQuery.error
-                  : null
-              }
-              isLoading={teamActions.teamsQuery.isLoading}
-              isPending={
-                teamActions.createTeamMutation.isPending ||
-                teamActions.updateTeamMutation.isPending ||
-                teamActions.deleteTeamMutation.isPending
-              }
-              onCreate={teamActions.openCreateDialog}
-              onDelete={teamActions.setTeamToDelete}
-              onDuplicate={teamActions.openDuplicateDialog}
-              onEdit={teamActions.openEditDialog}
-              onAddToChannel={teamActions.setTeamToAddToChannel}
-              onDiscover={() => openCommunityCatalog("teams")}
-              onShare={teamActions.openShare}
-              onImport={() => {
-                teamImportInputRef.current?.click();
-              }}
-              personas={personas.libraryPersonas}
-              teams={teamActions.teams}
-            />
-          </div>
+                <TeamsSection
+                  error={
+                    teamActions.teamsQuery.error instanceof Error
+                      ? teamActions.teamsQuery.error
+                      : null
+                  }
+                  isLoading={teamActions.teamsQuery.isLoading}
+                  isPending={
+                    teamActions.createTeamMutation.isPending ||
+                    teamActions.updateTeamMutation.isPending ||
+                    teamActions.deleteTeamMutation.isPending
+                  }
+                  onCreate={teamActions.openCreateDialog}
+                  onDelete={teamActions.setTeamToDelete}
+                  onDuplicate={teamActions.openDuplicateDialog}
+                  onEdit={teamActions.openEditDialog}
+                  onAddToChannel={teamActions.setTeamToAddToChannel}
+                  onDiscover={() => openCommunityCatalog("teams")}
+                  onShare={teamActions.openShare}
+                  onImport={() => {
+                    teamImportInputRef.current?.click();
+                  }}
+                  personas={personas.libraryPersonas}
+                  teams={teamActions.teams}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
