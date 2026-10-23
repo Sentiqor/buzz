@@ -11,6 +11,26 @@ use crate::{AgentsCmd, RespondToArg};
 
 pub async fn dispatch(command: AgentsCmd, client: &BuzzClient) -> Result<(), CliError> {
     match command {
+        AgentsCmd::Status {
+            worker,
+            turn,
+            stage,
+            task,
+            next,
+        } => {
+            let owner = require_owner(client)?;
+            let event = crate::agent_status::build_status(
+                client.keys(),
+                &owner,
+                worker,
+                turn,
+                &stage,
+                &task,
+                &next,
+            )?;
+            println!("{}", client.publish_ephemeral_event(event).await?);
+            Ok(())
+        }
         AgentsCmd::DraftCreate {
             channel,
             display_name,

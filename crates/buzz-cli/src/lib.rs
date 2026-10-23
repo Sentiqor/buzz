@@ -1,4 +1,5 @@
 pub mod agent_management;
+mod agent_status;
 mod client;
 mod commands;
 mod error;
@@ -351,6 +352,24 @@ impl RespondToArg {
 
 #[derive(Subcommand)]
 pub enum AgentsCmd {
+    /// Report an owner-encrypted task stage for this worker and turn
+    Status {
+        /// Zero-based worker slot supplied by the harness
+        #[arg(long, value_parser = clap::value_parser!(u8).range(0..32))]
+        worker: u8,
+        /// Current harness turn UUID (never reuse from an earlier turn)
+        #[arg(long)]
+        turn: Uuid,
+        /// Explicit task stage; turn completion alone does not complete a task
+        #[arg(long, value_parser = ["working", "testing", "reviewing", "waiting_ci", "waiting_approval", "blocked", "completed", "available"])]
+        stage: String,
+        /// Short task objective, without secrets or raw tool output
+        #[arg(long)]
+        task: String,
+        /// Next action or concrete blocker
+        #[arg(long, default_value = "")]
+        next: String,
+    },
     /// Open a prefilled create-agent form in the owner's Buzz Desktop
     DraftCreate {
         /// Current channel UUID; the new agent is added here after save

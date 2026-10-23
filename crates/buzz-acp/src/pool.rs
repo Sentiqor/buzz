@@ -3018,7 +3018,7 @@ pub async fn run_prompt_task(
     // failed or cancelled first turn must not make its retry assume that the
     // provider retained any of that thread's context.
     let mut pending_hydrated_thread_roots = HashSet::new();
-    let prompt_sections: Vec<String> = if let Some(text) = prompt_text {
+    let mut prompt_sections: Vec<String> = if let Some(text) = prompt_text {
         // Heartbeats create their session before this point, so a Goose method-not-found
         // probe has already selected the correct framing for this process.
         //
@@ -3174,6 +3174,9 @@ pub async fn run_prompt_task(
     // own block. Per-section blocks let the observer size trimmer elide a
     // section body in place while every `[Header]` line survives at the head
     // of its own leaf — so the "Prompt context" panel counts every section.
+    if agent.acp.observer_handle().is_some() {
+        prompt_sections.push(status_reporting_context(agent.index, &turn_id));
+    }
     let prompt_blocks: Vec<&str> = match slash_command {
         Some(ref cmd) => std::iter::once(cmd.as_str())
             .chain(prompt_sections.iter().map(String::as_str))
@@ -5110,6 +5113,20 @@ impl Drop for ReactionGuard {
             // cosmetic indicators and the stale state is harmless.
         }
     }
+}
+
+fn status_reporting_context(worker: usize, turn: &str) -> String {
+    format!(
+        "[Task status]\n\
+         This turn belongs to worker {worker}, turn {turn}. To report your current task to the owner, use:\n\
+         buzz agents status --worker {worker} --turn {turn} --stage working --task '<short objective>' --next '<next action>'\n\
+         Stages: working, testing, reviewing, waiting_ci, waiting_approval, blocked, completed, available.\n\
+         Report meaningful stage changes and refresh during existing monitoring passes (reports expire after two minutes).\n\
+         Report completed only after verifying the agreed outcome; ending a turn is not completion.\n\
+         Use shell-safe quoting. Do not include secrets, raw tool output, or private keys in status fields.\n\
+         This is owner-encrypted telemetry, not permission to start extra work or monitoring loops.\n\
+         If the installed CLI lacks this command, continue the task without retrying it."
+    )
 }
 
 // Periodically emits a `turn_liveness` observer event while a turn is in-flight,
@@ -7502,9 +7519,10 @@ while IFS= read -r line; do
   count=$((count + 1))
 done"#
         );
-        let acp = AcpClient::spawn("bash", &["-c".into(), script], &[], false)
+        let mut acp = AcpClient::spawn("bash", &["-c".into(), script], &[], false)
             .await
             .expect("spawn wire-capture ACP");
+        acp.set_observer(Some(observer::ObserverHandle::in_process()), 0);
         let scope = SessionScope::Thread {
             channel_id,
             root_event_id: root_id.clone(),
@@ -7636,6 +7654,8 @@ done"#
             .collect::<Vec<_>>()
             .join("\n");
         assert!(wire.contains("new human context"));
+        assert!(wire.contains("buzz agents status --worker 0 --turn follow-up-turn"));
+        assert!(!wire.contains("--turn first-turn"));
         assert!(!wire.contains("agent reply already retained in the provider session"));
         assert!(wire.contains("follow-up mention"));
         assert!(wire.contains("truncated=\"true\""));
